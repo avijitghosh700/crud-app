@@ -1,0 +1,15 @@
+{
+  "name": "crud-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile:sass": "sass sass/style.sass css/style.css --watch"
+  },
+  "author": "Avijit",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap": "^5.0.0-beta1"
+  }
+}

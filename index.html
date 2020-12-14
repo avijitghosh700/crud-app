@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+  <title>CRUD app</title>
+</head>
+<body>
+  <main class="main">
+    <section class="crud-control bg-crud-blue">
+      <div class="container crud-control__formModule">
+        <form action="#" method="POST"
+          class="crud-control__form 
+          credential bg-white shadow"
+          id="crud-form">
+          <div class="row gx-2">
+            <div class="col-sm-8">
+              <div class="credential__formGrp mb-2 mb-sm-0">
+                <input type="text"
+                  name="name"
+                  placeholder="Fullname"
+                  class="form-control credential__input">
+              </div>
+            </div>
+
+            <div class="col-sm-4">
+              <div class="crud-control__btnGrp">
+                <button class="btn btn__main">
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+    
+    <section class="crud-result">
+      <div class="crud-result-container container">
+        <div class="row">
+          <div class="col-12">
+            <ul class="crud-result__list 
+              list-unstyled m-0" 
+              id="crud-result-list">
+
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="js/app.js"></script>
+</body>
+</html>
