@@ -1,6 +1,9 @@
 let form = document.querySelector("#crud-form");
+let formEdit = document.querySelector('#crud-form-edit');
 let crudResultList = document.querySelector('#crud-result-list');
 let crudDataArr = [];
+let selectedIndex = null;
+let bsModal = new bootstrap.Modal(document.querySelector("#editModal"), { keyboard: true });
 
 let localStorageCheck = {
   get: function() {
@@ -55,7 +58,7 @@ let dataViewer = () => {
     crudResultList.innerHTML = '';
     crudDataArr.forEach((item, index) => {
       crudResultList.insertAdjacentHTML(
-        "beforeend", 
+        "beforeend",
         `<li class="crud-result__item shadow">
           <div class="row">
             <div class="col-sm-8 mb-3 mb-sm-0">
@@ -71,7 +74,9 @@ let dataViewer = () => {
                 <div class="row gx-2">
                   <div class="col-6">
                     <button class="btn btn__action edit"
-                      data-count="${index}">
+                      data-count="${index}"
+                      data-bs-toggle="modal" 
+                      data-bs-target="#editModal">
                       Edit
                     </button>
                   </div>
@@ -102,6 +107,36 @@ let dataViewer = () => {
   }
 }
 
+let dataSelected = (evt) => {
+  let target = evt.currentTarget;
+  selectedIndex = +target.dataset.count;
+  let updateField = document.querySelector('[name="updated_name"]');
+  let selectedName = crudDataArr[selectedIndex].name;
+
+  updateField.value = selectedName;
+  console.log(selectedName, crudDataArr[selectedIndex]);
+}
+
+let dataUpdate = (evt) => {
+  evt.preventDefault();
+  let formData = new FormData(formEdit);
+
+  for (let [key, value] of formData.entries()) {
+    if (!value) {
+      evt.preventDefault();
+      return false;
+    } else {
+      crudDataArr[selectedIndex].name = value;
+
+      localStorage.setItem("crudData", JSON.stringify(crudDataArr));
+      formEdit.reset();
+      dataViewer();
+      bsModal.hide();
+      console.log(crudDataArr);
+    }
+  }
+}
+
 let dataRemover = (evt) => {
   let target = evt.currentTarget;
   let targetCount = +(target.dataset.count);
@@ -120,6 +155,15 @@ form.addEventListener("submit", (evt) => {
   }
   else
     console.log('Not supported.');
+});
+
+formEdit.addEventListener('submit', (evt) => {
+  if (localStorageCheck) {
+    dataUpdate(evt)
+  }
+  else {
+    console.log('Not Supported.');
+  }
 });
 
 // Update the view on load
@@ -145,6 +189,12 @@ window.onload = () => {
       dataRemover(evt);
     });
   });
+
+  editBtn.forEach((item, index) => {
+    item.addEventListener('click', (evt) => {
+      dataSelected(evt);
+    });
+  });
 }
 
 // Using MutationObserver API to listen for immediate DOM changes
@@ -157,6 +207,12 @@ let mutationObserver = new MutationObserver((mutations) => {
     // console.log(item);
     item.addEventListener('click', (evt) => {
       dataRemover(evt);
+    });
+  });
+
+  editBtn.forEach((item, index) => {
+    item.addEventListener("click", (evt) => {
+      dataSelected(evt);
     });
   });
 });

@@ -10127,4 +10127,8 @@ body {
   overflow-y: auto;
 }
 
+.crud-modalEdit__content {
+  border-radius: 0;
+}
+
 /*# sourceMappingURL=style.css.map */

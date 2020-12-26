@@ -43,13 +43,54 @@
             <ul class="crud-result__list 
               list-unstyled m-0" 
               id="crud-result-list">
-
             </ul>
           </div>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- Edit modal -->
+  <div class="crud-modalEdit 
+    modal fade" 
+    id="editModal">
+    <div class="modal-dialog crud-modalEdit__dialog">
+      <div class="modal-content crud-modalEdit__content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Entry</h5>
+          <button type="button" class="btn-close" 
+            data-bs-dismiss="modal">
+          </button>
+        </div>
+        <div class="modal-body">
+          <form action="#" method="POST"
+            class="crud-modalEdit__formEdit credential"
+            id="crud-form-edit">
+            <div class="row gx-2">
+              <div class="col-sm-8">
+                <div class="credential__formGrp mb-2 mb-sm-0">
+                  <input type="text"
+                    name="updated_name"
+                    placeholder="Fullname"
+                    class="form-control credential__input">
+                </div>
+              </div>
+
+              <div class="col-sm-4">
+                <div class="crud-modalEdit__btnGrp">
+                  <button class="btn btn__main">
+                    Update
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- END -->
+  <script src="/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
