@@ -38,14 +38,16 @@ let dataPusher = (evt) => {
     else {
       crudDataArr.push({
         count: crudDataArr.length,
-        name: value,
+        name: formData.get('name'),
       });
       
       localStorage.setItem("crudData", JSON.stringify(crudDataArr));
       form.reset();
       dataViewer();
+
       console.log(`${key}: ${value}`);
       console.log(crudDataArr);
+      break
     }
   }
 };
@@ -201,7 +203,7 @@ window.onload = () => {
 let mutationObserver = new MutationObserver((mutations) => {
   let deleteBtn = document.querySelectorAll('.delete');
   let editBtn = document.querySelectorAll('.edit');
-  
+
   console.log(mutations);
   deleteBtn.forEach((item, index) => {
     // console.log(item);
