@@ -1,32 +1,24 @@
-let form = document.querySelector("#crud-form");
-let formEdit = document.querySelector('#crud-form-edit');
-let crudResultList = document.querySelector('#crud-result-list');
+const bsModal = new bootstrap.Modal(document.querySelector("#editModal"), { keyboard: true });
+
+const form = document.querySelector("#crud-form");
+const formEdit = document.querySelector("#crud-form-edit");
+const crudResultList = document.querySelector("#crud-result-list");
+
 let crudDataArr = [];
 let selectedIndex = null;
-let bsModal = new bootstrap.Modal(document.querySelector("#editModal"), { keyboard: true });
 
-let localStorageCheck = {
-  get: function() {
-    let test = "test";
-    try {
-      localStorage.setItem(test, test);
-      localStorage.removeItem(test);
-      return true;
-    } 
-    catch (e) {
-      return false;
-    }
+const localStorageCheck = {
+  get isSupported() {
+    if (typeof Storage !== "undefined") return true;
+    else return false;
+  },
+  get isPresent() {
+    if (localStorage.getItem("crudData") !== null) return true;
+    else return false;
   },
 };
 
-let localStorageItemCheck = {
-  get: () => {
-    if (localStorage.getItem('crudData') !== null) return true;
-    else return false;
-  }
-}
-
-let dataPusher = (evt) => {
+const dataPusher = (evt) => {
   evt.preventDefault();
   let formData = new FormData(form);
 
@@ -34,34 +26,42 @@ let dataPusher = (evt) => {
     if (!value) {
       evt.preventDefault();
       return false;
-    } 
-    else {
+    } else {
       crudDataArr.push({
         count: crudDataArr.length,
-        name: formData.get('name'),
+        name: formData.get("name"),
       });
-      
+
       localStorage.setItem("crudData", JSON.stringify(crudDataArr));
       form.reset();
       dataViewer();
 
-      console.log(`${key}: ${value}`);
-      console.log(crudDataArr);
-      break
+      break;
     }
   }
 };
 
-let dataViewer = () => {
-  crudDataArr = JSON.parse(localStorage.getItem('crudData')) || [];
-  console.log(crudDataArr);
-  
-  if (crudDataArr != false) { // I need falsy value when the array is empty. e.g [] == false -> True || [] === false -> false
-    crudResultList.innerHTML = '';
-    crudDataArr.forEach((item, index) => {
-      crudResultList.insertAdjacentHTML(
-        "beforeend",
-        `<li class="crud-result__item shadow">
+const dataViewer = () => {
+  crudDataArr = JSON.parse(localStorage.getItem("crudData")) || [];
+
+  crudResultList.innerHTML = "";
+
+  if (!crudDataArr.length) {
+    crudResultList.insertAdjacentHTML(
+      "beforeend",
+      `<li class="text-center p-5">
+        <h2 class="heading heading__primary m-0">
+          Record is empty
+        </h2>
+      </li>`
+    );
+    return;
+  }
+
+  crudDataArr.forEach((item, index) => {
+    crudResultList.insertAdjacentHTML(
+      "beforeend",
+      `<li class="crud-result__item shadow">
           <div class="row">
             <div class="col-sm-8 mb-3 mb-sm-0">
               <div class="crud-result__item--content">
@@ -93,33 +93,20 @@ let dataViewer = () => {
             </div>
           </div>
         </li> `
-      );
-    });
-  }
-  else {
-    crudResultList.innerHTML = '';
-    crudResultList.insertAdjacentHTML(
-      "beforeend",
-      `<li class="text-center p-5">
-        <h2 class="heading heading__primary m-0">
-          Record is empty
-        </h2>
-      </li>`
     );
-  }
-}
+  });
+};
 
-let dataSelected = (evt) => {
+const dataSelected = (evt) => {
   let target = evt.currentTarget;
   selectedIndex = +target.dataset.count;
   let updateField = document.querySelector('[name="updated_name"]');
   let selectedName = crudDataArr[selectedIndex].name;
 
   updateField.value = selectedName;
-  console.log(selectedName, crudDataArr[selectedIndex]);
-}
+};
 
-let dataUpdate = (evt) => {
+const dataUpdate = (evt) => {
   evt.preventDefault();
   let formData = new FormData(formEdit);
 
@@ -134,85 +121,42 @@ let dataUpdate = (evt) => {
       formEdit.reset();
       dataViewer();
       bsModal.hide();
-      console.log(crudDataArr);
     }
   }
-}
+};
 
-let dataRemover = (evt) => {
+const dataRemover = (evt) => {
   let target = evt.currentTarget;
-  let targetCount = +(target.dataset.count);
+  let targetCount = +target.dataset.count;
 
   crudDataArr.splice(targetCount, 1);
-  localStorage.setItem('crudData', JSON.stringify(crudDataArr));
-  crudDataArr = JSON.parse(localStorage.getItem('crudItem'));
+  localStorage.setItem("crudData", JSON.stringify(crudDataArr));
+  crudDataArr = JSON.parse(localStorage.getItem("crudItem"));
   dataViewer();
-  
-  console.log(targetCount);
-}
+};
 
 form.addEventListener("submit", (evt) => {
-  if (localStorageCheck) {
-    dataPusher(evt);
-  }
-  else
-    console.log('Not supported.');
+  if (localStorageCheck.isSupported) dataPusher(evt);
+  else throw new Error("localStorage is empty.");
 });
 
-formEdit.addEventListener('submit', (evt) => {
-  if (localStorageCheck) {
-    dataUpdate(evt)
-  }
-  else {
-    console.log('Not Supported.');
-  }
+formEdit.addEventListener("submit", (evt) => {
+  if (localStorageCheck.isSupported) dataUpdate(evt);
+  else throw new Error("localStorage is empty.");
 });
-
-// Update the view on load
-(() => {
-  if (localStorageCheck && localStorageItemCheck) {
-    dataViewer();
-  }
-  else {
-    console.log('Not supported.');
-  }
-})();
-
-// Listening for event from dynamically added DOM elements on load
-window.onload = () => {
-  // Collecting dynamically added DOM elements on load
-  let deleteBtn = document.querySelectorAll('.delete');
-  let editBtn = document.querySelectorAll('.edit');
-  // END
-  
-  deleteBtn.forEach((item, index) => {
-    // console.log(item);
-    item.addEventListener('click', (evt) => {
-      dataRemover(evt);
-    });
-  });
-
-  editBtn.forEach((item, index) => {
-    item.addEventListener('click', (evt) => {
-      dataSelected(evt);
-    });
-  });
-}
 
 // Using MutationObserver API to listen for immediate DOM changes
-let mutationObserver = new MutationObserver((mutations) => {
-  let deleteBtn = document.querySelectorAll('.delete');
-  let editBtn = document.querySelectorAll('.edit');
+const mutationObserver = new MutationObserver(() => {
+  let deleteBtn = document.querySelectorAll(".delete");
+  let editBtn = document.querySelectorAll(".edit");
 
-  console.log(mutations);
-  deleteBtn.forEach((item, index) => {
-    // console.log(item);
-    item.addEventListener('click', (evt) => {
+  deleteBtn.forEach((item) => {
+    item.addEventListener("click", (evt) => {
       dataRemover(evt);
     });
   });
 
-  editBtn.forEach((item, index) => {
+  editBtn.forEach((item) => {
     item.addEventListener("click", (evt) => {
       dataSelected(evt);
     });
@@ -225,7 +169,29 @@ mutationObserver.observe(crudResultList, {
   childList: true,
   subtree: true,
   attributeOldValue: true,
-  characterDataOldValue: true
+  characterDataOldValue: true,
 });
-
 // mutationObserver.disconnect();
+
+// Listening for event from dynamically added DOM elements on load
+window.onload = () => {
+  // Collecting dynamically added DOM elements on load
+  let deleteBtn = document.querySelectorAll(".delete");
+  let editBtn = document.querySelectorAll(".edit");
+  // END
+
+  if (localStorageCheck.isSupported && localStorageCheck.isPresent) dataViewer();
+  else throw new Error("localStorage not supported.");
+
+  deleteBtn.forEach((item) => {
+    item.addEventListener("click", (evt) => {
+      dataRemover(evt);
+    });
+  });
+
+  editBtn.forEach((item) => {
+    item.addEventListener("click", (evt) => {
+      dataSelected(evt);
+    });
+  });
+};
