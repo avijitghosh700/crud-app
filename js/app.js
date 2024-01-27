@@ -13,7 +13,7 @@ const localStorageCheck = {
     else return false;
   },
   get isPresent() {
-    if (localStorage.getItem("crudData") !== null) return true;
+    if (localStorage.getItem("todos") !== null) return true;
     else return false;
   },
 };
@@ -24,25 +24,23 @@ const dataPusher = (evt) => {
 
   for (let [key, value] of formData.entries()) {
     if (!value) {
-      evt.preventDefault();
       return false;
     } else {
       crudDataArr.push({
+        done: false,
         count: crudDataArr.length,
-        name: formData.get("name"),
+        name: formData.get("task"),
       });
 
-      localStorage.setItem("crudData", JSON.stringify(crudDataArr));
+      localStorage.setItem("todos", JSON.stringify(crudDataArr));
       form.reset();
       dataViewer();
-
-      break;
     }
   }
 };
 
 const dataViewer = () => {
-  crudDataArr = JSON.parse(localStorage.getItem("crudData")) || [];
+  crudDataArr = JSON.parse(localStorage.getItem("todos")) || [];
 
   crudResultList.innerHTML = "";
 
@@ -61,29 +59,35 @@ const dataViewer = () => {
   crudDataArr.forEach((item, index) => {
     crudResultList.insertAdjacentHTML(
       "beforeend",
-      `<li class="crud-result__item shadow">
-          <div class="row">
-            <div class="col-sm-8 mb-3 mb-sm-0">
-              <div class="crud-result__item--content">
-                <p class="text-crud-blue-d m-0">
+      `<li class="crud-result__item ${item.done ? "crud-result__item--done" : ""} shadow">
+          <div class="row gx-2">
+            <div class="col-7 mb-3 mb-sm-0">
+              <div class="crud-result__content">
+                <p class="text-crud-blue-d text-break text-truncate m-0">
                   ${item.name}
                 </p>
               </div>
             </div>
         
-            <div class="col-sm-4">
-              <div class="crud-result__item--action">
-                <div class="row gx-2">
-                  <div class="col-6">
-                    <button class="btn btn__action edit"
+            <div class="col">
+              <div class="crud-result__action">
+                <div class="row g-2">
+                  <div class="col">
+                    <button type="button" class="btn btn__action edit"
                       data-count="${index}"
                       data-bs-toggle="modal" 
                       data-bs-target="#editModal">
                       Edit
                     </button>
                   </div>
-                  <div class="col-6">
-                    <button class="btn btn__action delete"
+                  <div class="col">
+                    <button type="button" class="btn btn__action done"
+                      data-count="${index}">
+                      ${item.done ? "Undone" : "Done"}
+                    </button>
+                  </div>
+                  <div class="col">
+                    <button type="button" class="btn btn__action delete"
                       data-count="${index}">
                       Delete
                     </button>
@@ -110,14 +114,14 @@ const dataUpdate = (evt) => {
   evt.preventDefault();
   let formData = new FormData(formEdit);
 
-  for (let [key, value] of formData.entries()) {
+  for (let [__, value] of formData.entries()) {
     if (!value) {
       evt.preventDefault();
       return false;
     } else {
       crudDataArr[selectedIndex].name = value;
 
-      localStorage.setItem("crudData", JSON.stringify(crudDataArr));
+      localStorage.setItem("todos", JSON.stringify(crudDataArr));
       formEdit.reset();
       dataViewer();
       bsModal.hide();
@@ -125,13 +129,23 @@ const dataUpdate = (evt) => {
   }
 };
 
+const dataDone = (evt) => {
+  const target = evt.currentTarget;
+  const targetIndex = +target.dataset.count;
+
+  crudDataArr[targetIndex].done = !crudDataArr[targetIndex].done;
+  localStorage.setItem("todos", JSON.stringify(crudDataArr));
+
+  dataViewer();
+};
+
 const dataRemover = (evt) => {
-  let target = evt.currentTarget;
-  let targetCount = +target.dataset.count;
+  const target = evt.currentTarget;
+  const targetCount = +target.dataset.count;
 
   crudDataArr.splice(targetCount, 1);
-  localStorage.setItem("crudData", JSON.stringify(crudDataArr));
-  crudDataArr = JSON.parse(localStorage.getItem("crudItem"));
+  localStorage.setItem("todos", JSON.stringify(crudDataArr));
+
   dataViewer();
 };
 
@@ -149,10 +163,17 @@ formEdit.addEventListener("submit", (evt) => {
 const mutationObserver = new MutationObserver(() => {
   let deleteBtn = document.querySelectorAll(".delete");
   let editBtn = document.querySelectorAll(".edit");
+  let doneBtn = document.querySelectorAll(".done");
 
   deleteBtn.forEach((item) => {
     item.addEventListener("click", (evt) => {
       dataRemover(evt);
+    });
+  });
+
+  doneBtn.forEach((item) => {
+    item.addEventListener("click", (evt) => {
+      dataDone(evt);
     });
   });
 
