@@ -1,11 +1,13 @@
-const bsModal = new bootstrap.Modal(document.querySelector("#editModal"), { keyboard: true });
+const bsModal = new bootstrap.Modal(document.querySelector("#editModal"), {
+  keyboard: true,
+});
 
 const form = document.querySelector("#crud-form");
 const formEdit = document.querySelector("#crud-form-edit");
 const crudResultList = document.querySelector("#crud-result-list");
 
 let crudDataArr = [];
-let selectedIndex = null;
+let selectedData = null;
 
 const localStorageCheck = {
   get isSupported() {
@@ -22,13 +24,13 @@ const dataPusher = (evt) => {
   evt.preventDefault();
   let formData = new FormData(form);
 
-  for (let [key, value] of formData.entries()) {
+  for (let [__, value] of formData.entries()) {
     if (!value) {
       return false;
     } else {
       crudDataArr.push({
         done: false,
-        count: crudDataArr.length,
+        id: self.crypto.randomUUID(),
         name: formData.get("task"),
       });
 
@@ -56,10 +58,12 @@ const dataViewer = () => {
     return;
   }
 
-  crudDataArr.forEach((item, index) => {
+  crudDataArr.forEach((item) => {
     crudResultList.insertAdjacentHTML(
       "beforeend",
-      `<li class="crud-result__item ${item.done ? "crud-result__item--done" : ""} shadow">
+      `<li class="crud-result__item ${
+        item.done ? "crud-result__item--done" : ""
+      } shadow">
           <div class="row gx-2">
             <div class="col-7 mb-3 mb-sm-0">
               <div class="crud-result__content">
@@ -74,7 +78,7 @@ const dataViewer = () => {
                 <div class="row g-2">
                   <div class="col">
                     <button type="button" class="btn btn__action edit"
-                      data-count="${index}"
+                      data-uuid="${item.id}"
                       data-bs-toggle="modal" 
                       data-bs-target="#editModal">
                       Edit
@@ -82,13 +86,13 @@ const dataViewer = () => {
                   </div>
                   <div class="col">
                     <button type="button" class="btn btn__action done"
-                      data-count="${index}">
+                      data-uuid="${item.id}">
                       ${item.done ? "Undone" : "Done"}
                     </button>
                   </div>
                   <div class="col">
                     <button type="button" class="btn btn__action delete"
-                      data-count="${index}">
+                      data-uuid="${item.id}">
                       Delete
                     </button>
                   </div>
@@ -103,25 +107,24 @@ const dataViewer = () => {
 
 const dataSelected = (evt) => {
   let target = evt.currentTarget;
-  selectedIndex = +target.dataset.count;
   let updateField = document.querySelector('[name="updated_name"]');
-  let selectedName = crudDataArr[selectedIndex].name;
+  selectedData = crudDataArr.find((item) => item.id === target.dataset.uuid);
 
-  updateField.value = selectedName;
+  updateField.value = selectedData.name;
 };
 
 const dataUpdate = (evt) => {
   evt.preventDefault();
-  let formData = new FormData(formEdit);
+  const formData = new FormData(formEdit);
 
   for (let [__, value] of formData.entries()) {
     if (!value) {
       evt.preventDefault();
       return false;
     } else {
-      crudDataArr[selectedIndex].name = value;
-
+      selectedData.name = value;
       localStorage.setItem("todos", JSON.stringify(crudDataArr));
+
       formEdit.reset();
       dataViewer();
       bsModal.hide();
@@ -131,9 +134,9 @@ const dataUpdate = (evt) => {
 
 const dataDone = (evt) => {
   const target = evt.currentTarget;
-  const targetIndex = +target.dataset.count;
+  selectedData = crudDataArr.find((item) => item.id === target.dataset.uuid);
 
-  crudDataArr[targetIndex].done = !crudDataArr[targetIndex].done;
+  selectedData.done = !selectedData.done;
   localStorage.setItem("todos", JSON.stringify(crudDataArr));
 
   dataViewer();
@@ -141,9 +144,9 @@ const dataDone = (evt) => {
 
 const dataRemover = (evt) => {
   const target = evt.currentTarget;
-  const targetCount = +target.dataset.count;
+  const uuid = target.dataset.uuid;
 
-  crudDataArr.splice(targetCount, 1);
+  crudDataArr = crudDataArr.filter((item) => item.id !== uuid);
   localStorage.setItem("todos", JSON.stringify(crudDataArr));
 
   dataViewer();
@@ -159,8 +162,7 @@ formEdit.addEventListener("submit", (evt) => {
   else throw new Error("localStorage is empty.");
 });
 
-// Using MutationObserver API to listen for immediate DOM changes
-const mutationObserver = new MutationObserver(() => {
+const initializeEventHandlers = () => {
   let deleteBtn = document.querySelectorAll(".delete");
   let editBtn = document.querySelectorAll(".edit");
   let doneBtn = document.querySelectorAll(".done");
@@ -182,6 +184,11 @@ const mutationObserver = new MutationObserver(() => {
       dataSelected(evt);
     });
   });
+};
+
+// Using MutationObserver API to listen for immediate DOM changes
+const mutationObserver = new MutationObserver(() => {
+  initializeEventHandlers()
 });
 
 mutationObserver.observe(crudResultList, {
@@ -196,23 +203,9 @@ mutationObserver.observe(crudResultList, {
 
 // Listening for event from dynamically added DOM elements on load
 window.onload = () => {
-  // Collecting dynamically added DOM elements on load
-  let deleteBtn = document.querySelectorAll(".delete");
-  let editBtn = document.querySelectorAll(".edit");
-  // END
-
-  if (localStorageCheck.isSupported && localStorageCheck.isPresent) dataViewer();
+  if (localStorageCheck.isSupported && localStorageCheck.isPresent)
+    dataViewer();
   else throw new Error("localStorage not supported.");
 
-  deleteBtn.forEach((item) => {
-    item.addEventListener("click", (evt) => {
-      dataRemover(evt);
-    });
-  });
-
-  editBtn.forEach((item) => {
-    item.addEventListener("click", (evt) => {
-      dataSelected(evt);
-    });
-  });
+  initializeEventHandlers();
 };
