@@ -1,3 +1,4 @@
+// Bootstrap modal instance
 const bsModal = new bootstrap.Modal(document.querySelector("#editModal"), {
   keyboard: true,
 });
@@ -6,17 +7,33 @@ const form = document.querySelector("#crud-form");
 const formEdit = document.querySelector("#crud-form-edit");
 const crudResultList = document.querySelector("#crud-result-list");
 
-let crudDataArr = [];
+// Raw internal array
+let _crudDataArr = [];
+
+// Proxy to observe changes
+const crudDataArr = new Proxy(_crudDataArr, {
+  set(target, property, value) {
+    target[property] = value;
+    localStorage.setItem("todos", JSON.stringify(target));
+    dataViewer();
+    return true;
+  },
+  deleteProperty(target, property) {
+    delete target[property];
+    localStorage.setItem("todos", JSON.stringify(target));
+    dataViewer();
+    return true;
+  },
+});
+
 let selectedData = null;
 
 const localStorageCheck = {
   get isSupported() {
-    if (typeof Storage !== "undefined") return true;
-    else return false;
+    return typeof Storage !== "undefined";
   },
   get isPresent() {
-    if (localStorage.getItem("todos") !== null) return true;
-    else return false;
+    return localStorage.getItem("todos") !== null;
   },
 };
 
@@ -34,19 +51,15 @@ const dataPusher = (evt) => {
         name: formData.get("task"),
       });
 
-      localStorage.setItem("todos", JSON.stringify(crudDataArr));
       form.reset();
-      dataViewer();
     }
   }
 };
 
 const dataViewer = () => {
-  crudDataArr = JSON.parse(localStorage.getItem("todos")) || [];
-
   crudResultList.innerHTML = "";
 
-  if (!crudDataArr.length) {
+  if (!_crudDataArr.length) {
     crudResultList.insertAdjacentHTML(
       "beforeend",
       `<li class="text-center p-5">
@@ -58,58 +71,58 @@ const dataViewer = () => {
     return;
   }
 
-  crudDataArr.forEach((item) => {
+  _crudDataArr.forEach((item) => {
     crudResultList.insertAdjacentHTML(
       "beforeend",
       `<li class="crud-result__item ${
         item.done ? "crud-result__item--done" : ""
       } shadow">
-          <div class="row gx-2">
-            <div class="col-7 mb-3 mb-sm-0">
-              <div class="crud-result__content">
-                <p class="text-crud-blue-d text-break text-truncate m-0">
-                  ${item.name}
-                </p>
-              </div>
+        <div class="row gx-2">
+          <div class="col-7 mb-3 mb-sm-0">
+            <div class="crud-result__content">
+              <p class="text-crud-blue-d text-break text-truncate m-0">
+                ${item.name}
+              </p>
             </div>
-        
-            <div class="col">
-              <div class="crud-result__action">
-                <div class="row g-2">
-                  <div class="col">
-                    <button type="button" class="btn btn__action edit"
-                      data-uuid="${item.id}"
-                      data-bs-toggle="modal" 
-                      data-bs-target="#editModal">
-                      Edit
-                    </button>
-                  </div>
-                  <div class="col">
-                    <button type="button" class="btn btn__action done"
-                      data-uuid="${item.id}">
-                      ${item.done ? "Undone" : "Done"}
-                    </button>
-                  </div>
-                  <div class="col">
-                    <button type="button" class="btn btn__action delete"
-                      data-uuid="${item.id}">
-                      Delete
-                    </button>
-                  </div>
+          </div>
+          <div class="col">
+            <div class="crud-result__action">
+              <div class="row g-2">
+                <div class="col">
+                  <button type="button" class="btn btn__action edit"
+                    data-uuid="${item.id}"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#editModal">
+                    Edit
+                  </button>
+                </div>
+                <div class="col">
+                  <button type="button" class="btn btn__action done"
+                    data-uuid="${item.id}">
+                    ${item.done ? "Undone" : "Done"}
+                  </button>
+                </div>
+                <div class="col">
+                  <button type="button" class="btn btn__action delete"
+                    data-uuid="${item.id}">
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
           </div>
-        </li> `
+        </div>
+      </li>`
     );
   });
+
+  initializeEventHandlers();
 };
 
 const dataSelected = (evt) => {
   let target = evt.currentTarget;
   let updateField = document.querySelector('[name="updated_name"]');
-  selectedData = crudDataArr.find((item) => item.id === target.dataset.uuid);
-
+  selectedData = _crudDataArr.find((item) => item.id === target.dataset.uuid);
   updateField.value = selectedData.name;
 };
 
@@ -123,8 +136,7 @@ const dataUpdate = (evt) => {
       return false;
     } else {
       selectedData.name = value;
-      localStorage.setItem("todos", JSON.stringify(crudDataArr));
-
+      localStorage.setItem("todos", JSON.stringify(_crudDataArr));
       formEdit.reset();
       dataViewer();
       bsModal.hide();
@@ -134,22 +146,16 @@ const dataUpdate = (evt) => {
 
 const dataDone = (evt) => {
   const target = evt.currentTarget;
-  selectedData = crudDataArr.find((item) => item.id === target.dataset.uuid);
-
-  selectedData.done = !selectedData.done;
-  localStorage.setItem("todos", JSON.stringify(crudDataArr));
-
+  const item = _crudDataArr.find((i) => i.id === target.dataset.uuid);
+  item.done = !item.done;
+  localStorage.setItem("todos", JSON.stringify(_crudDataArr));
   dataViewer();
 };
 
 const dataRemover = (evt) => {
   const target = evt.currentTarget;
-  const uuid = target.dataset.uuid;
-
-  crudDataArr = crudDataArr.filter((item) => item.id !== uuid);
-  localStorage.setItem("todos", JSON.stringify(crudDataArr));
-
-  dataViewer();
+  const index = _crudDataArr.findIndex((i) => i.id === target.dataset.uuid);
+  if (index !== -1) crudDataArr.splice(index, 1);
 };
 
 form.addEventListener("submit", (evt) => {
@@ -163,49 +169,26 @@ formEdit.addEventListener("submit", (evt) => {
 });
 
 const initializeEventHandlers = () => {
-  let deleteBtn = document.querySelectorAll(".delete");
-  let editBtn = document.querySelectorAll(".edit");
-  let doneBtn = document.querySelectorAll(".done");
-
-  deleteBtn.forEach((item) => {
-    item.addEventListener("click", (evt) => {
-      dataRemover(evt);
-    });
+  document.querySelectorAll(".delete").forEach((item) => {
+    item.onclick = dataRemover;
   });
-
-  doneBtn.forEach((item) => {
-    item.addEventListener("click", (evt) => {
-      dataDone(evt);
-    });
+  document.querySelectorAll(".done").forEach((item) => {
+    item.onclick = dataDone;
   });
-
-  editBtn.forEach((item) => {
-    item.addEventListener("click", (evt) => {
-      dataSelected(evt);
-    });
+  document.querySelectorAll(".edit").forEach((item) => {
+    item.onclick = dataSelected;
   });
 };
 
-// Using MutationObserver API to listen for immediate DOM changes
-const mutationObserver = new MutationObserver(() => {
-  initializeEventHandlers()
-});
-
-mutationObserver.observe(crudResultList, {
-  attributes: true,
-  characterData: true,
-  childList: true,
-  subtree: true,
-  attributeOldValue: true,
-  characterDataOldValue: true,
-});
-// mutationObserver.disconnect();
-
-// Listening for event from dynamically added DOM elements on load
+// On window load
 window.onload = () => {
-  if (localStorageCheck.isSupported && localStorageCheck.isPresent)
+  if (localStorageCheck.isSupported && localStorageCheck.isPresent) {
+    const saved = JSON.parse(localStorage.getItem("todos")) || [];
+    _crudDataArr.push(...saved);
     dataViewer();
-  else throw new Error("localStorage not supported.");
-
-  initializeEventHandlers();
+  } else if (localStorageCheck.isSupported) {
+    localStorage.setItem("todos", JSON.stringify([]));
+  } else {
+    throw new Error("localStorage not supported.");
+  }
 };
